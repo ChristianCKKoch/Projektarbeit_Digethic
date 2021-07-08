@@ -3,6 +3,23 @@ Projektarbeit_Digethic
 
 Mein Abschluss-Projekt im Rahmen der Zertifizierung zum Data Scientist bei Dighetic
 
+- cookiecutter-Struktur angelegt
+- Datensatz angepasst und erweitert:
+    - Views erstellt für die Zusammenführung von Match und Team Daten
+    - View erstellt mit der Selektion der Daten für die Aufgabe
+    - Daten erweitert mit Transfermarkdaten zur Verwendung des Gesamtmarktwertes und der Spielermarktwerte eines Teams
+- Bibliothek mit erstellten Classifier-Modellen sowie Preprocessing aus erstem Projekt angelegt
+- train_model.py erstellt für Ablauf des Trainierens
+
+Todo:
+- Optimierungen:
+    - Neuronales Netz verwenden
+    - Ensemble learning
+    - Random search verwenden für Modell(Hyperparameter)-Optimierung
+- Daten erweitern:
+    - Wetterdaten hinzufügen
+    - Team-Attribute ausweiten
+
 Project Organization
 ------------
 
