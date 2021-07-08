@@ -38,7 +38,7 @@ class Classifier:
 
                 #Knn-Classifier Akkuranz bestimmen
                 score = knnclf.score(self.X_test,self.y_test)
-                self.ergebnis.append(['knn-classifier', score, knnclf])
+                self.ergebnis.append([knnclf.__class__.__name__, score, knnclf])
             #-----------------------
                 
             #-----------------------
@@ -60,7 +60,7 @@ class Classifier:
                 dt_clf = grd_clf.best_estimator_
 
                 score = dt_clf.score(self.X_test, self.y_test)
-                self.ergebnis.append(['decision tree', score, dt_clf])
+                self.ergebnis.append([dt_clf.__class__.__name__, score, dt_clf])
             #-----------------------
 
             #-----------------------
@@ -71,7 +71,7 @@ class Classifier:
                 rf = RandomForestClassifier(n_estimators=100)
                 rf.fit(self.X_train, self.y_train)
                 score = rf.score(self.X_test, self.y_test)
-                self.ergebnis.append(['random forest', score, rf])
+                self.ergebnis.append([rf.__class__.__name__, score, rf])
             #-----------------------
 
             #-----------------------
@@ -81,7 +81,7 @@ class Classifier:
                 svm = SVC(kernel = 'poly')
                 svm.fit(self.X_train, self.y_train)
                 score = svm.score(self.X_test, self.y_test)
-                self.ergebnis.append(['support vector machine', score, svm])
+                self.ergebnis.append([svm.__class__.__name__, score, svm])
 
             #-----------------------
             #MLP
@@ -91,9 +91,21 @@ class Classifier:
                 , learning_rate='adaptive', learning_rate_init=0.01, n_iter_no_change=200, early_stopping=True)
                 mlp.fit(self.X_train, self.y_train)
                 score = mlp.score(self.X_test, self.y_test)
-                self.ergebnis.append(['multi-layer perceptron', score, mlp])
+                self.ergebnis.append([mlp.__class__.__name__, score, mlp])
                 print("iterations: {}; layers: {}; loss: {}".format(mlp.n_iter_, mlp.n_layers_, mlp.loss_))
                 epochs = np.linspace(1,mlp.n_iter_, mlp.n_iter_)
 
+        return self.ergebnis
+    
+    def ensemble_model(self):
+        
+        models = list()
+        for model in self.ergebnis:
+            models.append([model[0], model[2]])
+        
+        voting_clf = VotingClassifier(estimators=models, voting='hard')
+        voting_clf.fit(self.X_train, self.y_train)
+        score = voting_clf.score(self.X_test, self.y_test)
+        self.ergebnis.append([voting_clf.__class__.__name__, score, voting_clf])
 
         return self.ergebnis
