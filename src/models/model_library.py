@@ -9,6 +9,12 @@ import numpy as np
 import pandas as pd
 import pickle as pi
 
+import torch
+import torch.nn as nn
+import numpy as np
+import matplotlib.pyplot as plt
+
+
 class Classifier:
     def __init__(self, X_train, X_test, y_train, y_test):
         #Array für alle Ergebnisse
@@ -109,3 +115,44 @@ class Classifier:
         self.ergebnis.append([voting_clf.__class__.__name__, score, voting_clf])
 
         return self.ergebnis
+
+    def neuronal_network(self):
+        
+        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        print('This Computation is running on {}'.format(device))
+
+        nn_model = NN_Model()
+        loss_func = torch.nn.CrossEntropyLoss()
+        optimizer = torch.optim.Adam(nn_model.parameters(), lr=0.001)
+        epoch_errors = []
+
+        #X = torch.tensor(self.X_train, dtype=torch.float).reshape(-1,1)
+        X = torch.from_numpy(self.X_train).float()
+        #y = torch.from_numpy(self.y_train).long()
+        y = torch.tensor(self.y_train, dtype=torch.long)
+
+        for epoch in range(1000):
+            error = loss_func(nn_model(X),y)
+            optimizer.zero_grad()
+            error.backward()
+            epoch_errors.append(error.item())
+            optimizer.step()
+
+        print('Loss nach {} Iterationen: {}'.format(epoch+1,error.item()))
+
+        plt.plot(epoch_errors)
+        plt.show()
+
+class NN_Model(torch.nn.Module):
+    def __init__(self):
+        super(NN_Model, self).__init__()
+        self.fc1 = nn.Linear(77,120)
+        self.fc2 = nn.Linear(120,40)
+        self.output = nn.Linear(40,3)
+
+    def forward(self,x):
+        x = torch.relu(self.fc1(x))
+        x = torch.sigmoid(self.fc2(x))
+        x = self.output(x)
+
+        return x

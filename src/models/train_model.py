@@ -21,7 +21,7 @@ y = daten["result"]
 X_train, X_test, y_train, y_test, scaler = Preprocessor(X, y).get_data()
 
 #Models spezifieren
-models = {"rf":RandomForestClassifier, "svm":SVC, "dt":DecisionTreeClassifier, "knn":KNeighborsClassifier, "mlp":MLPClassifier}
+models = {"rf":RandomForestClassifier} #, "svm":SVC, "dt":DecisionTreeClassifier, "knn":KNeighborsClassifier, "mlp":MLPClassifier}
 
 #Classifier verwenden
 clf = Classifier(X_train, X_test, y_train, y_test)
@@ -35,3 +35,4 @@ print("Bestes Model ist: {} mit einer Akkuranz von {}%".format(sorted(ausgabe, k
 bestes_model = sorted(ausgabe, key=itemgetter(1), reverse=True)[0][2]
 print("Alle Ergebnisse: {}".format(ausgabe))
 
+nnet = clf.neuronal_network()
