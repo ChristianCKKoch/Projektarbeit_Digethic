@@ -11,11 +11,17 @@ Mein Abschluss-Projekt im Rahmen der Zertifizierung zum Data Scientist bei Dighe
 - Bibliothek mit erstellten Classifier-Modellen sowie Preprocessing aus erstem Projekt angelegt
 - train_model.py erstellt für Ablauf des Trainierens
 
+- Neuronales Netz verwenden
+    - Ensemble learning
+
+- eingangsdaten-Analyse
+- Auswertung des Modells ROC confusion matrix
+
 Todo:
 - Optimierungen:
-    - Neuronales Netz verwenden
-    - Ensemble learning
+    - Prediction ermöglichen!
     - Random search verwenden für Modell(Hyperparameter)-Optimierung
+    - batch size? dropout verwenden? early stopping programmatisch?
 - Daten erweitern:
     - Wetterdaten hinzufügen
     - Team-Attribute ausweiten

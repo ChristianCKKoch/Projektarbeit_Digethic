@@ -12,7 +12,6 @@ import pickle as pi
 import torch
 import torch.nn as nn
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 class Classifier:
@@ -84,7 +83,7 @@ class Classifier:
             #Support Vector Machine
             #-----------------------
             elif model == 'svm':
-                svm = SVC(kernel = 'poly')
+                svm = SVC(kernel = 'poly', probability=True)
                 svm.fit(self.X_train, self.y_train)
                 score = svm.score(self.X_test, self.y_test)
                 self.ergebnis.append([svm.__class__.__name__, score, svm])
@@ -109,14 +108,14 @@ class Classifier:
         for model in self.ergebnis:
             models.append([model[0], model[2]])
         
-        voting_clf = VotingClassifier(estimators=models, voting='hard')
+        voting_clf = VotingClassifier(estimators=models, voting='soft')
         voting_clf.fit(self.X_train, self.y_train)
         score = voting_clf.score(self.X_test, self.y_test)
         self.ergebnis.append([voting_clf.__class__.__name__, score, voting_clf])
 
         return self.ergebnis
 
-    def neuronal_network(self):
+    def neuronal_network(self, in_epochs):
         
         device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         print('This Computation is running on {}'.format(device))
@@ -125,34 +124,86 @@ class Classifier:
         loss_func = torch.nn.CrossEntropyLoss()
         optimizer = torch.optim.Adam(nn_model.parameters(), lr=0.001)
         epoch_errors = []
+        epoch_train_accuracy = []
+        epoch_test_accuracy = []
 
         #X = torch.tensor(self.X_train, dtype=torch.float).reshape(-1,1)
-        X = torch.from_numpy(self.X_train).float()
+        X_Train = torch.from_numpy(self.X_train).float()
         #y = torch.from_numpy(self.y_train).long()
-        y = torch.tensor(self.y_train, dtype=torch.long)
+        y_Train = torch.tensor(self.y_train, dtype=torch.long)
 
-        for epoch in range(1000):
-            error = loss_func(nn_model(X),y)
+        X_Test = torch.from_numpy(self.X_test).float()
+        
+        y_Test = torch.from_numpy(np.array(self.y_test)).long()
+        
+
+        for epoch in range(in_epochs):
+            
+            train_nn_model = nn_model(X_Train)
+            train_pred_ergebnis = []
+            train_running_correct = 0
+
+            test_nn_model = nn_model(X_Test)
+            test_pred_ergebnis = []
+            test_running_correct = 0
+
+            with torch.no_grad():
+            #Trainings-Akkuranz
+            # Leeren array füllen mit Ergebnissen aus Ergebnis-Tensor
+                for i in range(train_nn_model.shape[0]):
+                    ergebnis = 0 if (train_nn_model[i][0] > train_nn_model[i][1] and train_nn_model[i][0] > train_nn_model[i][2]) else 1 if (train_nn_model[i][1] > train_nn_model[i][0] and train_nn_model[i][1] > train_nn_model[i][2]) else 2
+                    train_pred_ergebnis.append(ergebnis)
+            #Test-Akkuranz
+            # Leeren array füllen mit Ergebnissen aus Ergebnis-Tensor
+                for i in range(test_nn_model.shape[0]):
+                    ergebnis = 0 if (test_nn_model[i][0] > test_nn_model[i][1] and test_nn_model[i][0] > test_nn_model[i][2]) else 1 if (test_nn_model[i][1] > test_nn_model[i][0] and test_nn_model[i][1] > test_nn_model[i][2]) else 2
+                    test_pred_ergebnis.append(ergebnis)
+
+            # array in tensor umwandeln
+            train_pred_tensor = torch.tensor(train_pred_ergebnis, dtype=torch.float)
+            # array in tensor umwandeln
+            test_pred_tensor = torch.tensor(test_pred_ergebnis, dtype=torch.float)
+            
+            #???
+            #train_nn_model nicht imselbene Format und Wertebereich wie y_Train!!??
+            error = loss_func(train_nn_model,y_Train)
             optimizer.zero_grad()
             error.backward()
             epoch_errors.append(error.item())
+            
+            train_running_correct += (train_pred_tensor == y_Train).sum().item()
+            train_accuracy = train_running_correct*100./y_Train.shape[0]
+            epoch_train_accuracy.append(train_accuracy)
+
+            test_running_correct += (test_pred_tensor == y_Test).sum().item()
+            test_accuracy = test_running_correct*100./y_Test.shape[0]
+            epoch_test_accuracy.append(test_accuracy)
+
+            print("Epoche: {} mit Train-Akkuranz: {} und Test-Akkuranz: {}".format(epoch, train_accuracy, test_accuracy))
+
             optimizer.step()
 
-        print('Loss nach {} Iterationen: {}'.format(epoch+1,error.item()))
+        print('Loss nach {} Epochen: {}'.format(epoch+1,error.item()))
 
-        plt.plot(epoch_errors)
-        plt.show()
+        self.ergebnis.append([nn_model.__class__.__name__, test_accuracy/100, nn_model])
+
+        return self.ergebnis, epoch_errors, epoch_train_accuracy, epoch_test_accuracy, test_pred_tensor
+
 
 class NN_Model(torch.nn.Module):
     def __init__(self):
         super(NN_Model, self).__init__()
-        self.fc1 = nn.Linear(77,120)
-        self.fc2 = nn.Linear(120,40)
+        self.fc1 = nn.Linear(75,120)
+        self.fc2 = nn.Linear(120,180)
+        self.fc3 = nn.Linear(180,100)
+        self.fc4 = nn.Linear(100,40)
         self.output = nn.Linear(40,3)
 
     def forward(self,x):
         x = torch.relu(self.fc1(x))
         x = torch.sigmoid(self.fc2(x))
+        x = torch.relu(self.fc3(x))
+        x = torch.sigmoid(self.fc4(x))
         x = self.output(x)
 
         return x
