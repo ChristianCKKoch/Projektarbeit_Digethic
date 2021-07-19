@@ -69,7 +69,7 @@ daten_prepared = daten_join.drop(["home_team_name", "away_team_name"], axis=1)
 
 # daten_join = daten.join(pd.DataFrame(onehot_enc_list[1][1].toarray(), columns=sp_name_array))
 
-daten_prepared.to_excel("data/processed/Bundesliga_daten.xlsx")
+daten_prepared.to_excel("data/processed/Bundesliga_daten.ods")
 
 X = daten_prepared.loc[:,daten_prepared.columns != "result"]
 y = daten_prepared["result"]

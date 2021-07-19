@@ -8,6 +8,7 @@ from sklearn.svm import SVC
 import numpy as np
 import pandas as pd
 import pickle as pi
+from operator import itemgetter
 
 import torch
 import torch.nn as nn
@@ -31,14 +32,24 @@ class Classifier:
             if model == 'knn':
                 #Optimalen Knn-Classifier bestimmen
                 error = []
-                for i in range(1, 40):
+                for i in range(1, 250):
                     knn = KNeighborsClassifier(n_neighbors=i)
                     knn.fit(self.X_train, self.y_train)
                     pred_i = knn.predict(self.X_test)
-                    error.append(np.mean(pred_i != self.y_test))
+                    error.append([i, np.mean(pred_i != self.y_test)])
+
+                #Debug-Print
+                print()
+                print("Debug KNN-Classifier")
+                print("knn n: {}".format(sorted(error, key=itemgetter(1), reverse=False)[0][0]))
+                print("knn error: {}".format(sorted(error, key=itemgetter(1), reverse=False)[0][1]))
+                print()
+
+                #Optimale Anzahl der n_neighbors übergeben
+                optimal_n = sorted(error, key=itemgetter(1), reverse=False)[0][0]
 
                 #Knn-Classifier trainieren
-                knnclf = KNeighborsClassifier(n_neighbors=7)
+                knnclf = KNeighborsClassifier(n_neighbors=optimal_n)
                 knnclf.fit(self.X_train, self.y_train)
 
                 #Knn-Classifier Akkuranz bestimmen
@@ -55,7 +66,8 @@ class Classifier:
                 #Optimalen Decision Tree bestimmen
                 #Zu testende Decision Tree Parameter
                 dt = DecisionTreeClassifier()
-                tree_para = {'criterion':['gini','entropy'],'max_depth':[i for i in range(1,20)], 'min_samples_split':[i for i in range (2,20)]}
+                tree_para = {'criterion':['gini','entropy'],'max_depth':[i for i in range(1,20)]
+                    , 'min_samples_split':[i for i in range (2,10)]}
 
                 #GridSearchCV 
                 grd_clf = GridSearchCV(dt, tree_para, cv=5)
@@ -63,6 +75,12 @@ class Classifier:
 
                 #Besten gefundenen Decision Tree übergeben
                 dt_clf = grd_clf.best_estimator_
+
+                #Debug-Print
+                print()
+                print("Debug DecisionTreeClassifier")
+                print("dt best parameters: {}".format(grd_clf.best_params_))
+                print()
 
                 score = dt_clf.score(self.X_test, self.y_test)
                 self.ergebnis.append([dt_clf.__class__.__name__, score, dt_clf])
@@ -97,8 +115,13 @@ class Classifier:
                 mlp.fit(self.X_train, self.y_train)
                 score = mlp.score(self.X_test, self.y_test)
                 self.ergebnis.append([mlp.__class__.__name__, score, mlp])
+
+                #Debug-Print
+                print()
+                print("Debug MLPClassifier")
                 print("iterations: {}; layers: {}; loss: {}".format(mlp.n_iter_, mlp.n_layers_, mlp.loss_))
-                epochs = np.linspace(1,mlp.n_iter_, mlp.n_iter_)
+                print()
+                #epochs = np.linspace(1,mlp.n_iter_, mlp.n_iter_)
 
         return self.ergebnis
     

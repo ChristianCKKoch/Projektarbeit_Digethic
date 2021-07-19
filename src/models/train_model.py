@@ -1,5 +1,5 @@
 
-from operator import itemgetter, attrgetter
+from operator import itemgetter
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -54,6 +54,18 @@ else:
         tor = bestes_model(torch.from_numpy(X_test).float())
         y_pred_proba = m(tor)
 
+    plt.plot(epoch_errors, color="green", label='CrossEntropyLoss')
+    plt.xlabel("Epochs")
+    plt.ylabel("CrossEntropyLoss")
+    plt.title("Epoch errors")
+    plt.show()
+    plt.plot(epoch_train_accuracy, color="red", label='Train accuracy')
+    plt.plot(epoch_test_accuracy, color="blue", label='Test accuracy')
+    plt.xlabel("Epochs")
+    plt.ylabel("Accuracy in % / Error rate")
+    plt.title("Epoch accuracy / Epoch error rate")
+    plt.show()
+
 
 #print(y_pred_proba)
 print()
@@ -64,18 +76,6 @@ auc = metrics.roc_auc_score(y_test, y_pred_proba, multi_class='ovr')
 print('AUC: %.3f' % auc)
 
 y_pred = bestes_model.predict(X_test) if sorted(ausgabe, key=itemgetter(1), reverse=True)[0][0] != "NN_Model" else y_pred_nn
-
-plt.plot(epoch_errors, color="green", label='CrossEntropyLoss')
-plt.xlabel("Epochs")
-plt.ylabel("CrossEntropyLoss")
-plt.title("Epoch errors")
-plt.show()
-plt.plot(epoch_train_accuracy, color="red", label='Train accuracy')
-plt.plot(epoch_test_accuracy, color="blue", label='Test accuracy')
-plt.xlabel("Epochs")
-plt.ylabel("Accuracy in % / Error rate")
-plt.title("Epoch accuracy / Epoch error rate")
-plt.show()
 
 cnf_matrix = metrics.confusion_matrix(y_test, y_pred,labels=[0, 1, 2])
 # Plot non-normalized confusion matrix
