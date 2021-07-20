@@ -46,3 +46,4 @@ def heatmap(corr_matrix):
 
 def countplot(daten):
     sns.countplot(x = 'result', data=daten)
+    

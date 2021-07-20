@@ -2,29 +2,38 @@ Projektarbeit_Digethic
 ==============================
 
 Mein Abschluss-Projekt im Rahmen der Zertifizierung zum Data Scientist bei Dighetic
+Autor: Christian Koch
+Im Juli 2021
+
+Kurze Anleitung:
+1) Projekt aus Github laden und benötigte Installation durchführen (pip install -r requirements.txt), empfohlen in der lokalen virtuellen Environment (python -m venv .venv)
+2) Vorbereiten der Daten ausführen (python .\src\data\prepare.py)
+3) Modelle trainieren (python .\src\models\train_model.py)
+4) Prädiktion durchführen (python .\src\models\predict_result.py), evtl. vorher noch Vorhersage-File /data/raw/Bundesliga_Vorhersage.xlsx anpassen
 
 - cookiecutter-Struktur angelegt
 - Datensatz angepasst und erweitert:
     - Views erstellt für die Zusammenführung von Match und Team Daten
     - View erstellt mit der Selektion der Daten für die Aufgabe
     - Daten erweitert mit Transfermarkdaten zur Verwendung des Gesamtmarktwertes und der Spielermarktwerte eines Teams
-- Bibliothek mit erstellten Classifier-Modellen sowie Preprocessing aus erstem Projekt angelegt
+- prepare.py erstellt mit Prozeduren zum One-hot-encoden und Vorbereiten sowie Analysieren der Eingangsdaten
+- visualize.py erstellt
+- Bibliothek model_library.py mit erstellten Classifier-Modellen sowie Preprocessing aus erstem Projekt angelegt
 - train_model.py erstellt für Ablauf des Trainierens
+- Bibliothek erweitert mit Voting Classifier (Ensemble Learning) und Neuronalem Netz
+- Early Stopping in Neuronales Netz eingebaut; hierzu early_stopping.py erstellt basierend auf https://github.com/Bjarten/early-stopping-pytorch/blob/master/pytorchtools.py
+- Auswertung des Modells mittels ROC-AUC und confusion matrix
+- Prädiktion ermöglicht (predict_result.py), noch sehr simpel, mittels xl-sheet und einfacher Ausgabe (print)
 
-- Neuronales Netz verwenden
-    - Ensemble learning
-
-- eingangsdaten-Analyse
-- Auswertung des Modells ROC confusion matrix
-
-Todo:
+Todo's:
 - Optimierungen:
-    - Prediction ermöglichen!
-    - Random search verwenden für Modell(Hyperparameter)-Optimierung
-    - batch size? dropout verwenden? early stopping programmatisch?
+    - Prädiktionsanwendung ausweiten und benutzerfreundlicher sowie flexibler gestalten
+    - Random-search verwenden für Modell(Hyperparameter)-Optimierung
+    - Programmierung noch abstrakter und schlanker gestalten
 - Daten erweitern:
     - Wetterdaten hinzufügen
     - Team-Attribute ausweiten
+    - Aufstellungen und Spielerstärken integrieren
 
 Project Organization
 ------------

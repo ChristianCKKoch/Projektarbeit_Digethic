@@ -23,16 +23,17 @@ connection.close()
 
 #Korrelationen der Eingangsvariablen erkennen
 corr_matrix = daten.corr()
-
 heatmap(corr_matrix)
-plt.show()
+#plt.show()
 
+#Ausgabe der Features nach Stärke der Korrelation mit der Zielvariablen sortiert
 print(abs(corr_matrix["result"]).sort_values(ascending=False))
 
+#Verteilung der Vorkommen der Ausprägung der Zielvariable
 countplot(daten) 
-plt.show()
+#plt.show()
 
-onehot_enc_list = list()
+#Vorbereiten des joins der Ausgangsdaten mit den one-hot-encodeten Daten
 daten_join = daten
 
 #Teamname-Spalten encoden (one-hot-encoding)
@@ -55,18 +56,23 @@ for spalte in ('home_team_name','away_team_name'):
     #Zusammenführen (Join) der One-hot-encodeten Team-Namen mit dem ursprünglichen Datensatz
     daten_join = daten_join.join(pd.DataFrame(team_name_onehot.toarray(), columns=sp_name_array))
 
+#Aufräumen des neuen gejointen Datensatzes:
+# Zielvariable "result" ans Ende
+# Entfernen der Spalten mit Heim- und Auswärtsteam-Namen
 result_spalte = daten_join.pop("result")
 daten_join['result'] = result_spalte
 daten_prepared = daten_join.drop(["home_team_name", "away_team_name"], axis=1)
 
-daten_prepared.to_excel("data/processed/Bundesliga_daten.xlsx")
+#Zwischenausgabe des Datensatzes
+# daten_prepared.to_excel("data/processed/Bundesliga_daten.xlsx")
 
-X = daten_prepared.loc[:,daten_prepared.columns != "result"]
-y = daten_prepared["result"]
+# X = daten_prepared.loc[:,daten_prepared.columns != "result"]
+# y = daten_prepared["result"]
 
-X_train, X_test, y_train, y_test, scaler = Preprocessor(X, y).get_data()
+# X_train, X_test, y_train, y_test, scaler = Preprocessor(X, y).get_data()
 
-X_train_exp = pd.DataFrame(X_train)
-X_train_exp.to_excel("data/processed/Bundesliga_daten_X_normalized.xlsx")
+# X_train_exp = pd.DataFrame(X_train)
+# X_train_exp.to_excel("data/processed/Bundesliga_daten_X_normalized.xlsx")
 
+#Speichern der vorbereiteten Daten in einer Pickle-Datei
 daten_prepared.to_pickle("data/processed/Prepared_Data.pickle")

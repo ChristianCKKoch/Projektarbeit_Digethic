@@ -76,7 +76,10 @@ target/
 .ipynb_checkpoints/
 
 # exclude data from source control by default
-/data/
+# C.koch angepasst 21.07.2021
+#/data/
+/data/processed/Prepared_Data.pickle
+/data/interim/Ergebnis_Akkuranzen.xlsx
 
 # Mac OS-specific storage files
 .DS_Store
