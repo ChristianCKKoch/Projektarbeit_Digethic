@@ -5,7 +5,12 @@ from sklearn.preprocessing import OrdinalEncoder, OneHotEncoder
 from preprocessor import Preprocessor
 from pandas.plotting import scatter_matrix
 import matplotlib.pyplot as plt
-import seaborn as sns
+
+import sys
+sys.path.append("src/visualization/")
+from visualize import heatmap
+from visualize import countplot
+
 
 #Verbindung zu sqlite Datenbank öffnen
 connection = sqlite3.connect("data/raw/database.sqlite")
@@ -19,17 +24,12 @@ connection.close()
 #Korrelationen der Eingangsvariablen erkennen
 corr_matrix = daten.corr()
 
-plt.figure(figsize=(20, 20))
-sns.set(font_scale=0.7)
-heatmap = sns.heatmap(corr_matrix, vmin=-1, vmax=1, annot=True, fmt='.3f', linewidths=.1)
-heatmap.set_title('Correlation Heatmap', fontdict={'fontsize':16}, pad=8);
+heatmap(corr_matrix)
 plt.show()
 
 print(abs(corr_matrix["result"]).sort_values(ascending=False))
 
-attributes = ["result", "away_Gesamtmarktwert", "home_Gesamtmarktwert", "home_chanceCreationCrossing", "away_Kadergroesse", "home_Kadergroesse"]
-scatter_matrix(daten[attributes])
-#scatter_matrix(daten)
+countplot(daten) 
 plt.show()
 
 onehot_enc_list = list()
@@ -59,17 +59,7 @@ result_spalte = daten_join.pop("result")
 daten_join['result'] = result_spalte
 daten_prepared = daten_join.drop(["home_team_name", "away_team_name"], axis=1)
 
-# print(onehot_enc_list[1][1].toarray())
-# print("Array-Objekt 0")
-# print(onehot_enc_list[1][2].categories_[0])
-
-# sp_name_array = onehot_enc_list[1][2].categories_[0]
-# for i in range(0, sp_name_array.size):
-#     sp_name_array[i] = sp_name_array[i] + '_H'
-
-# daten_join = daten.join(pd.DataFrame(onehot_enc_list[1][1].toarray(), columns=sp_name_array))
-
-daten_prepared.to_excel("data/processed/Bundesliga_daten.ods")
+daten_prepared.to_excel("data/processed/Bundesliga_daten.xlsx")
 
 X = daten_prepared.loc[:,daten_prepared.columns != "result"]
 y = daten_prepared["result"]

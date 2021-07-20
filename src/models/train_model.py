@@ -26,21 +26,23 @@ y = daten["result"]
 X_train, X_test, y_train, y_test, scaler = Preprocessor(X, y).get_data()
 
 #Models spezifieren
-models = {"knn":KNeighborsClassifier, "rf":RandomForestClassifier, "svm":SVC, "dt":DecisionTreeClassifier, "mlp":MLPClassifier}
+models = {"rf":RandomForestClassifier} #, "knn":KNeighborsClassifier, "rf":RandomForestClassifier, "svm":SVC, "dt":DecisionTreeClassifier, "mlp":MLPClassifier}
 
 #Classifier verwenden
 clf = Classifier(X_train, X_test, y_train, y_test)
 resultat = clf.train_models(models)
 resultat_mitEnsemble = clf.ensemble_model()
 
-resultat_mitNN, epoch_errors, epoch_train_accuracy, epoch_test_accuracy, y_pred_nn = clf.neuronal_network(86)
+resultat_mitNN, epoch_errors, epoch_train_accuracy, epoch_test_accuracy, y_pred_nn = clf.neuronal_network(1000, 2, 50)
 
 ausgabe = resultat_mitNN
 
 #Bestes Ergebnis bestimmen und als Modell speichern
 print("Bestes Model ist: {} mit einer Akkuranz von {}%".format(sorted(ausgabe, key=itemgetter(1), reverse=True)[0][0],sorted(ausgabe, key=itemgetter(1), reverse=True)[0][1]*100))
 bestes_model = sorted(ausgabe, key=itemgetter(1), reverse=True)[0][2]
-print("Alle Ergebnisse: {}".format(ausgabe))
+print("Alle Ergebnisse: ") #{}".format(ausgabe))
+df_ergebnisse = pd.DataFrame(ausgabe)
+df_ergebnisse.to_excel("reports/Ergebnis_Akkuranzen.xlsx", header=['Name des Modells','Akkuranz','Modellobjekt'])
 
 #Wenn bestes Modell NN, dann predict probability vorbereiten
 if sorted(ausgabe, key=itemgetter(1), reverse=True)[0][0] != "NN_Model":
@@ -54,20 +56,23 @@ else:
         tor = bestes_model(torch.from_numpy(X_test).float())
         y_pred_proba = m(tor)
 
-    plt.plot(epoch_errors, color="green", label='CrossEntropyLoss')
-    plt.xlabel("Epochs")
-    plt.ylabel("CrossEntropyLoss")
-    plt.title("Epoch errors")
-    plt.show()
-    plt.plot(epoch_train_accuracy, color="red", label='Train accuracy')
-    plt.plot(epoch_test_accuracy, color="blue", label='Test accuracy')
-    plt.xlabel("Epochs")
-    plt.ylabel("Accuracy in % / Error rate")
-    plt.title("Epoch accuracy / Epoch error rate")
-    plt.show()
+        plt.plot(epoch_errors, color="green", label='CrossEntropyLoss')
+        plt.xlabel("Epochs")
+        plt.ylabel("CrossEntropyLoss")
+        plt.title("Epoch errors")
+        plt.legend()
+        plt.show()
+
+        plt.plot(epoch_train_accuracy, color="red", label='Train accuracy')
+        plt.plot(epoch_test_accuracy, color="blue", label='Test accuracy')
+        plt.xlabel("Epochs")
+        plt.ylabel("Accuracy in %")
+        plt.title("Epoch accuracy")
+        plt.legend()
+        plt.show()
 
 
-#print(y_pred_proba)
+print(y_pred_proba)
 print()
 print('Testdaten')
 print(y_test)

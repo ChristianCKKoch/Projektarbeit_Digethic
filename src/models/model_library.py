@@ -14,6 +14,9 @@ import torch
 import torch.nn as nn
 import numpy as np
 
+import sys
+sys.path.append("src/models/")
+from early_stopping import EarlyStopping
 
 class Classifier:
     def __init__(self, X_train, X_test, y_train, y_test):
@@ -127,6 +130,8 @@ class Classifier:
     
     def ensemble_model(self):
         
+        #Alle inkludierten Modelle werden in eine Liste geladen, die dann als Parameter
+        #dem Voting Classifier übergeben wird.
         models = list()
         for model in self.ergebnis:
             models.append([model[0], model[2]])
@@ -138,78 +143,125 @@ class Classifier:
 
         return self.ergebnis
 
-    def neuronal_network(self, in_epochs):
-        
+    def neuronal_network(self, epochs, patience_early_stopping, threshold_for_early_stopping):
+        #Funktion für das Ansprechen und Ausführen des Neuronalen Netzes mittels Pytorch
+
+        #Standardausgabe für Pytorch, auf welcher processing unit gerechnet wird
+        #In meinem Falle nur CPU möglich
         device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         print('This Computation is running on {}'.format(device))
 
+        #Initialisierung des Neuronalen Netzwerks
         nn_model = NN_Model()
+        #Als Fehlerfunktion wird CrossEntropyLoss verwendet
         loss_func = torch.nn.CrossEntropyLoss()
-        optimizer = torch.optim.Adam(nn_model.parameters(), lr=0.001)
+        #Als Optimizer der Adam-Optimizer mit einer learing rate von 0.001
+        optimizer = torch.optim.Adam(nn_model.parameters(), lr=0.0001)
+
+        #Leere Arrays für das Speichern von Fehler-/Akkuranzdaten über die Epochen hinweg
         epoch_errors = []
         epoch_train_accuracy = []
         epoch_test_accuracy = []
 
-        #X = torch.tensor(self.X_train, dtype=torch.float).reshape(-1,1)
-        X_Train = torch.from_numpy(self.X_train).float()
-        #y = torch.from_numpy(self.y_train).long()
-        y_Train = torch.tensor(self.y_train, dtype=torch.long)
+        #Initialisierung des Early Stopping
+        early_stopping = EarlyStopping(patience=patience_early_stopping)
 
+        #Umsetzen der Trainings- und Testdaten in die benötigten Tensoren-Formate
+        X_Train = torch.from_numpy(self.X_train).float()
+        y_Train = torch.tensor(self.y_train, dtype=torch.long)
         X_Test = torch.from_numpy(self.X_test).float()
-        
         y_Test = torch.from_numpy(np.array(self.y_test)).long()
         
-
-        for epoch in range(in_epochs):
+        #Trainieren des Neuronalen Netzwerks; maximale Anzahl der Epochen als Funktionsparameter übergeben
+        for epoch in range(epochs):
             
-            train_nn_model = nn_model(X_Train)
+            #Vorbereiten der Ergebnisse des Neuronalen Netzwerkes
+            #LogSoftmax explizit hier, da diese in der Fehlerfunktion (CrossEntropyLoss) automatisch
+            #angewandt wird!
+            log_sm = torch.nn.LogSoftmax(dim=1)
+            train_nn_model = log_sm(nn_model(X_Train))
+            test_nn_model = log_sm(nn_model(X_Test))
+
+            #Erstellen von leerem Array für das Speichern der einzelnen vom Modell berechneten Ergebnisse
+            #Zusätzlich noch ein Zähler zum Aufsummieren der korrekt vorhergesagten Ergebnisse, mit 0 initialisiert
             train_pred_ergebnis = []
             train_running_correct = 0
 
-            test_nn_model = nn_model(X_Test)
             test_pred_ergebnis = []
             test_running_correct = 0
 
+            #Autograd ausschalten für das Berechnen der Ergebnisse zu Validierungszwecken
             with torch.no_grad():
             #Trainings-Akkuranz
             # Leeren array füllen mit Ergebnissen aus Ergebnis-Tensor
+            # Hierbei werden die probalistischen Werte verglichen und das wahrscheinlichste Ergebnis übergeben
+            # als 0 - Heimsieg, 1 - Unentschieden, 2 - Auswärtssieg
                 for i in range(train_nn_model.shape[0]):
                     ergebnis = 0 if (train_nn_model[i][0] > train_nn_model[i][1] and train_nn_model[i][0] > train_nn_model[i][2]) else 1 if (train_nn_model[i][1] > train_nn_model[i][0] and train_nn_model[i][1] > train_nn_model[i][2]) else 2
                     train_pred_ergebnis.append(ergebnis)
             #Test-Akkuranz
             # Leeren array füllen mit Ergebnissen aus Ergebnis-Tensor
+            # Hierbei werden die probalistischen Werte verglichen und das wahrscheinlichste Ergebnis übergeben
+            # als 0 - Heimsieg, 1 - Unentschieden, 2 - Auswärtssieg
                 for i in range(test_nn_model.shape[0]):
                     ergebnis = 0 if (test_nn_model[i][0] > test_nn_model[i][1] and test_nn_model[i][0] > test_nn_model[i][2]) else 1 if (test_nn_model[i][1] > test_nn_model[i][0] and test_nn_model[i][1] > test_nn_model[i][2]) else 2
                     test_pred_ergebnis.append(ergebnis)
 
-            # array in tensor umwandeln
+            #Arrays in tensor umwandeln
             train_pred_tensor = torch.tensor(train_pred_ergebnis, dtype=torch.float)
-            # array in tensor umwandeln
             test_pred_tensor = torch.tensor(test_pred_ergebnis, dtype=torch.float)
-            
-            #???
-            #train_nn_model nicht imselbene Format und Wertebereich wie y_Train!!??
-            error = loss_func(train_nn_model,y_Train)
-            optimizer.zero_grad()
-            error.backward()
-            epoch_errors.append(error.item())
-            
+
+            #Die korrekten Ergebnisse aus dem Traininsdatensatz werden aufsummiert und
+            #daraus die Akkuranz dieser Epoche berechnet und dem Array epoch_train_accuracy für spätere Auswertung übergeben
             train_running_correct += (train_pred_tensor == y_Train).sum().item()
             train_accuracy = train_running_correct*100./y_Train.shape[0]
             epoch_train_accuracy.append(train_accuracy)
 
+            #Die korrekten Ergebnisse aus dem Testdatensatz werden aufsummiert und
+            #daraus die Akkuranz dieser Epoche berechnet und dem Array epoch_test_accuracy für spätere Auswertung übergeben
             test_running_correct += (test_pred_tensor == y_Test).sum().item()
             test_accuracy = test_running_correct*100./y_Test.shape[0]
             epoch_test_accuracy.append(test_accuracy)
-
-            print("Epoche: {} mit Train-Akkuranz: {} und Test-Akkuranz: {}".format(epoch, train_accuracy, test_accuracy))
-
+            
+            #---------------------------------------------------------------------------------------
+            #Hier werden nun die entscheidenden Schritte zum Trainineren des NN Modells durchgeführt
+            #---------------------------------------------------------------------------------------
+            error = loss_func(nn_model(X_Train),y_Train)
+            optimizer.zero_grad()
+            error.backward()
+            epoch_errors.append(error.item())
             optimizer.step()
+            #---------------------------------------------------------------------------------------
+            
+            #Debug-Print Ausgabe der Epoche mit Akkuranzen
+            print("Epoche: {}/{} mit Train-Akkuranz: {} und Test-Akkuranz: {}".format(epoch, epochs, train_accuracy, test_accuracy))
 
-        print('Loss nach {} Epochen: {}'.format(epoch+1,error.item()))
+            #-----------------------------
+            #Early Stopping
+            #-----------------------------
+            #Loss für Testdaten berechnen
+            error_Test = loss_func(nn_model(X_Test),y_Test)
 
+            #Aufruf der Early Stopping Funktion
+            # Die Fehlerfunkion der Testdaten dient hier als zentrales Kriterium:
+            # Sinkt diese mit der Rate "delta" eine bestimmte Anzahl Schritte "patience" 
+            # hintereinander NICHT MEHR, wird gestoppt. 
+            # Zusätzlich wird ein Threshold mit angegeben, sodass erst ab einer bestimmten erreichten
+            # Akkuranz das Early Stopping aktiviert wird.
+            early_stopping(error_Test, nn_model, train_accuracy > threshold_for_early_stopping)
+            #Sollte ein Early Stop erreicht sein, wird das Durchlaufen der Epochen unterbrochen
+            if early_stopping.early_stop:
+                print("Early stopping")
+                break
+            #-----------------------------
+
+        #Debug-Print finales Loss-Ergebnis
+        #print('Loss nach {} Epochen: {}'.format(epoch+1,error.item()))
+
+        #Übergabe der Ergebnisdaten and den zentralen Ergebnis-Array
         self.ergebnis.append([nn_model.__class__.__name__, test_accuracy/100, nn_model])
 
+        #Rückgabewerte für weitere Verwendung (Ausgabe, Test) im Hauptprogramm
         return self.ergebnis, epoch_errors, epoch_train_accuracy, epoch_test_accuracy, test_pred_tensor
 
 
@@ -227,6 +279,9 @@ class NN_Model(torch.nn.Module):
         x = torch.sigmoid(self.fc2(x))
         x = torch.relu(self.fc3(x))
         x = torch.sigmoid(self.fc4(x))
+        #Keine Softmax-Funktion benötigt bei output, da CrossEntropyLoss
+        #als Fehlerfunktion dies automatisch tut
+        #Bemerkung: softmax muss aber beim Validieren/Testen angewandt werden!
         x = self.output(x)
 
         return x

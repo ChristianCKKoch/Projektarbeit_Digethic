@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import seaborn as sns
 import numpy as np
 
 
@@ -36,3 +37,12 @@ def plot_confusion_matrix(cm, classes,
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
     plt.tight_layout()
+
+
+def heatmap(corr_matrix):
+    sns.set(font_scale=0.7)
+    heatmap = sns.heatmap(corr_matrix, vmin=-1, vmax=1, annot=True, fmt='.3f', linewidths=.1, cmap=sns.diverging_palette(20, 220, n=200))
+    heatmap.set_title('Correlation Heatmap', fontdict={'fontsize':16}, pad=8);
+
+def countplot(daten):
+    sns.countplot(x = 'result', data=daten)
