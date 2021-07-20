@@ -80,6 +80,8 @@ target/
 #/data/
 /data/processed/Prepared_Data.pickle
 /data/interim/Ergebnis_Akkuranzen.xlsx
+/data/raw/database.sqlite
+/data/external/database.sqlite.orig
 
 # Mac OS-specific storage files
 .DS_Store
