@@ -5,12 +5,16 @@ Mein Abschluss-Projekt im Rahmen der Zertifizierung zum Data Scientist bei Dighe
 Autor: Christian Koch
 Im Juli 2021
 
+Das PDF zur Projektarbeit ist im Ordner \docs zu finden "Projektarbeit-Data-Scientist-ChristianKoch-1.0.pdf"
+
 Kurze Anleitung:
 1) Projekt aus Github laden und benötigte Installation durchführen (pip install -r requirements.txt), empfohlen in der lokalen virtuellen Environment (python -m venv .venv)
 2) Vorbereiten der Daten ausführen (python .\src\data\prepare.py)
+--> Schritt 2 ist nur nötig, wenn die Daten erneut aus der Datenbank gelesen werden sollen! Github erlaubt nur Dateien < 100MB. Darum ist die Datenbank selber nicht im Umfang von Github verfügbar.
 3) Modelle trainieren (python .\src\models\train_model.py)
 4) Prädiktion durchführen (python .\src\models\predict_result.py), evtl. vorher noch Vorhersage-File /data/raw/Bundesliga_Vorhersage.xlsx anpassen
 
+Zusammenfasung der erbrachten Programmierleistung:
 - cookiecutter-Struktur angelegt
 - Datensatz angepasst und erweitert:
     - Views erstellt für die Zusammenführung von Match und Team Daten
